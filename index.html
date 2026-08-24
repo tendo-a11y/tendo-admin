@@ -563,6 +563,19 @@
     </div>
 
     <div class="panel" style="max-width:640px;margin-top:16px">
+      <div class="panel-head"><h3>Технические работы</h3></div>
+
+      <div class="settings-row">
+        <div>
+          <div class="label">Показать заглушку "Технические работы"</div>
+          <div class="desc">Включи, когда правишь код — пользователи увидят вежливое сообщение вместо возможных ошибок. Данные пользователей это никак не затрагивает.</div>
+          <div class="status-pill off" id="maintenanceStatus"><span class="dotp"></span><span id="maintenanceStatusText">Выключено — сайт работает как обычно</span></div>
+        </div>
+        <label class="switch"><input type="checkbox" id="maintenanceToggle" onchange="toggleMaintenance()"><span class="switch-track"></span></label>
+      </div>
+    </div>
+
+    <div class="panel" style="max-width:640px;margin-top:16px">
       <div class="panel-head"><h3>О владельце</h3></div>
       <div class="settings-row">
         <div>
@@ -950,8 +963,24 @@
     }
   }
 
+  async function loadMaintenanceState() {
+    try {
+      const res = await fetch(API_BASE_URL + '/settings/maintenance_mode');
+      const data = await res.json();
+      const isOn = data.value === 'true' || data.value === true;
+      document.getElementById('maintenanceToggle').checked = isOn;
+      const pill = document.getElementById('maintenanceStatus');
+      const text = document.getElementById('maintenanceStatusText');
+      pill.classList.toggle('on', isOn);
+      pill.classList.toggle('off', !isOn);
+      text.textContent = isOn ? 'Включено — пользователи видят заглушку' : 'Выключено — сайт работает как обычно';
+    } catch (err) {
+      console.warn('Не удалось загрузить состояние техработ:', err.message);
+    }
+  }
+
   async function loadAllAdminData() {
-    await Promise.all([loadDashboard(), loadUsers(), loadSupportTickets(), loadSuggestions(), loadSuggestionsPreview(), loadMonetizationState()]);
+    await Promise.all([loadDashboard(), loadUsers(), loadSupportTickets(), loadSuggestions(), loadSuggestionsPreview(), loadMonetizationState(), loadMaintenanceState()]);
   }
 
   async function checkServerHealth() {
@@ -1023,6 +1052,30 @@
     } catch (err) {
       console.warn('Не удалось сохранить настройку на сервере:', err.message);
       // Откатываем визуальное состояние обратно — сервер не подтвердил изменение
+      checkbox.checked = previousChecked;
+      applyVisualState(previousChecked);
+      text.textContent += ' — не сохранилось, попробуй ещё раз';
+    }
+  }
+
+  async function toggleMaintenance() {
+    const checkbox = document.getElementById('maintenanceToggle');
+    const checked = checkbox.checked;
+    const previousChecked = !checked;
+    const pill = document.getElementById('maintenanceStatus');
+    const text = document.getElementById('maintenanceStatusText');
+
+    function applyVisualState(isOn) {
+      pill.classList.toggle('on', isOn);
+      pill.classList.toggle('off', !isOn);
+      text.textContent = isOn ? 'Включено — пользователи видят заглушку' : 'Выключено — сайт работает как обычно';
+    }
+
+    applyVisualState(checked);
+    try {
+      await adminApiFetch('/admin/settings/maintenance_mode', { method: 'PUT', body: JSON.stringify({ value: checked }) });
+    } catch (err) {
+      console.warn('Не удалось сохранить режим техработ на сервере:', err.message);
       checkbox.checked = previousChecked;
       applyVisualState(previousChecked);
       text.textContent += ' — не сохранилось, попробуй ещё раз';
