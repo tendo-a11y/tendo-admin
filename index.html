@@ -523,7 +523,7 @@
     <div class="panel table-panel">
       <table>
         <thead>
-          <tr><th>Пользователь</th><th>Способ входа</th><th>Дата регистрации</th><th>Согласие получено</th><th>Язык</th><th>Страна</th><th>Premium</th></tr>
+          <tr><th>Пользователь</th><th>Способ входа</th><th>Дата регистрации</th><th>Согласие получено</th><th>Язык</th><th>Страна</th><th>Email / Premium</th></tr>
         </thead>
         <tbody id="usersTableBody">
           <tr><td colspan="7" style="text-align:center;color:var(--text-faint);padding:24px">Загрузка данных с сервера…</td></tr>
@@ -849,7 +849,10 @@
         <td style="${u.consent_given_at ? 'color:var(--green)' : 'color:var(--text-faint)'}">${u.consent_given_at ? '✓ ' + formatDateTime(u.consent_given_at) : '— нет'}</td>
         <td>${u.language || '—'}</td>
         <td>${escapeHtmlAdmin(u.country || 'неизвестно')}</td>
-        <td><label class="switch" style="transform:scale(0.8)"><input type="checkbox" ${u.premium_override ? 'checked' : ''} onchange="toggleUserPremium('${u.id}', this.checked)"><span class="switch-track"></span></label></td>
+        <td>
+          <div style="font-size:10.5px;color:var(--text-faint);margin-bottom:4px">${escapeHtmlAdmin(u.email || '—')}</div>
+          <label class="switch" style="transform:scale(0.8)"><input type="checkbox" ${u.premium_override ? 'checked' : ''} onchange="toggleUserPremium('${u.id}', this.checked)"><span class="switch-track"></span></label>
+        </td>
       </tr>
     `).join('');
   }
