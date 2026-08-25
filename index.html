@@ -614,6 +614,8 @@
     return res.json();
   }
 
+  let supportAutoRefreshInterval = null;
+
   async function adminLogin() {
     const input = document.getElementById('adminPasswordInput');
     const password = input.value;
@@ -631,6 +633,14 @@
       input.value = ''; // сам пароль нигде больше не хранится и не нужен
       document.getElementById('adminLoginOverlay').style.display = 'none';
       loadAllAdminData();
+      // Фоновое обновление обращений в поддержку — чтобы значок слева и список
+      // обновлялись сами, без необходимости заходить в раздел или перезагружать
+      // страницу. Не трогает открытую детальную панель, только список и счётчик.
+      if (!supportAutoRefreshInterval) {
+        supportAutoRefreshInterval = setInterval(() => {
+          loadSupportTickets().catch(() => { /* тихо игнорируем, попробуем через 20с снова */ });
+        }, 20000);
+      }
     } catch (err) {
       errorEl.style.display = 'block';
     }
