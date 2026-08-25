@@ -523,10 +523,10 @@
     <div class="panel table-panel">
       <table>
         <thead>
-          <tr><th>Пользователь</th><th>Способ входа</th><th>Дата регистрации</th><th>Согласие получено</th><th>Язык</th><th>Страна</th></tr>
+          <tr><th>Пользователь</th><th>Способ входа</th><th>Дата регистрации</th><th>Согласие получено</th><th>Язык</th><th>Страна</th><th>Premium</th></tr>
         </thead>
         <tbody id="usersTableBody">
-          <tr><td colspan="6" style="text-align:center;color:var(--text-faint);padding:24px">Загрузка данных с сервера…</td></tr>
+          <tr><td colspan="7" style="text-align:center;color:var(--text-faint);padding:24px">Загрузка данных с сервера…</td></tr>
         </tbody>
       </table>
     </div>
@@ -818,7 +818,18 @@
       document.getElementById('usersCountSub').textContent = allUsers.length + ' пользователей · согласие с политикой отслеживается для каждого';
       renderUsersTable();
     } catch (err) {
-      document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-faint);padding:24px">Не удалось загрузить</td></tr>';
+      document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-faint);padding:24px">Не удалось загрузить</td></tr>';
+    }
+  }
+
+  async function toggleUserPremium(userId, checked) {
+    try {
+      await adminApiFetch('/admin/users/' + userId + '/premium', { method: 'PUT', body: JSON.stringify({ value: checked }) });
+      const u = allUsers.find(u => u.id === userId);
+      if (u) u.premium_override = checked ? 1 : 0;
+    } catch (err) {
+      console.warn('Не удалось изменить Premium для пользователя:', err.message);
+      renderUsersTable(); // откатываем визуально, перерисовав из последних сохранённых данных
     }
   }
 
@@ -827,7 +838,7 @@
     const filtered = allUsers.filter(u => (u.name || '').toLowerCase().includes(search) || (u.email || '').toLowerCase().includes(search));
     const body = document.getElementById('usersTableBody');
     if (filtered.length === 0) {
-      body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-faint);padding:24px">Никого не найдено</td></tr>';
+      body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-faint);padding:24px">Никого не найдено</td></tr>';
       return;
     }
     body.innerHTML = filtered.map(u => `
@@ -838,6 +849,7 @@
         <td style="${u.consent_given_at ? 'color:var(--green)' : 'color:var(--text-faint)'}">${u.consent_given_at ? '✓ ' + formatDateTime(u.consent_given_at) : '— нет'}</td>
         <td>${u.language || '—'}</td>
         <td>${escapeHtmlAdmin(u.country || 'неизвестно')}</td>
+        <td><label class="switch" style="transform:scale(0.8)"><input type="checkbox" ${u.premium_override ? 'checked' : ''} onchange="toggleUserPremium('${u.id}', this.checked)"><span class="switch-track"></span></label></td>
       </tr>
     `).join('');
   }
